@@ -26,7 +26,8 @@ jobs:
 
       - name: Build Angular App
         working-directory: ./angular-frontend
-        run: npm run build --configuration production
+        run: ng build --project angular-frontend --configuration production
+
 
       # Copy Angular dist output into backend/public folder
       - name: Copy Angular Build to Backend
