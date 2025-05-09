@@ -1,44 +1,50 @@
-name: Deploy Angular + Node to Azure
+name: Azure Full Stack App Deployment
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger on push to main branch
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+    # Setup Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
 
-      - name: Install and build Angular frontend
-        working-directory: angular-frontend
-        run: |
-          npm install -g @angular/cli
-          npm install
-          ng build --configuration production
+    # Install dependencies and build Angular frontend
+    - name: Install frontend dependencies
+      working-directory: ./angular-frontend
+      run: npm install
 
-      - name: Deploy to Azure App Service (Node backend)
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: your-node-app-name
-          slot-name: production
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
-          package: node-backend/
+    - name: Build Angular frontend
+      working-directory: ./angular-frontend
+      run: npm run build -- --configuration production
 
+    # Copy frontend dist to backend public folder
+    - name: Move frontend to backend
+      run: |
+        rm -rf ./node-backend/public
+        mkdir -p ./node-backend/public
+        cp -r ./angular-frontend/dist/angular-frontend/* ./node-backend/public/
 
-      # Deploy to Azure App Service using Zip Deploy
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: 'CelesContainerWebApp'          # Change this
-          slot-name: production
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A04C453DCFE54F46811FDD8D34AA3558 }}
-          package: angular-frontend/dist/angular-frontend
+    # Install backend dependencies
+    - name: Install backend dependencies
+      working-directory: ./node-backend
+      run: npm install
+
+    # Deploy to Azure App Service
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: CelesContainerWebApp           # Replace with your Azure App Service name
+        slot-name: Production
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./node-backend
