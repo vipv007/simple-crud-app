@@ -1,0 +1,53 @@
+name: Deploy Full Stack App to Azure
+
+on:
+  push:
+    branches:
+      - main  # or your deployment branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Install frontend dependencies and build Angular app
+      - name: Install Angular Frontend Dependencies
+        working-directory: ./angular-frontend
+        run: npm install
+
+      - name: Build Angular App
+        working-directory: ./angular-frontend
+        run: npm run build --configuration production
+
+      # Copy Angular dist output into backend/public folder
+      - name: Copy Angular Build to Backend
+        run: |
+          mkdir -p backend/public
+          cp -r angular-frontend/dist/angular-frontend/* backend/public/
+
+      # Install backend dependencies
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm install
+
+      # Zip backend folder for deployment
+      - name: Zip Backend App
+        run: zip -r deploy.zip backend
+
+      # Deploy to Azure App Service using Zip Deploy
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'CelesContainerWebApp'          # Change this
+          slot-name: production
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A04C453DCFE54F46811FDD8D34AA3558 }}
+          package: deploy.zip
