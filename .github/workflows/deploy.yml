@@ -1,9 +1,9 @@
-name: Deploy Angular Frontend to Azure
+name: Azure Full Stack App Deployment
 
 on:
   push:
     branches:
-      - main  # or your preferred branch
+      - main
 
 jobs:
   build-and-deploy:
@@ -18,17 +18,32 @@ jobs:
       with:
         node-version: '18'
 
+    # Install Angular frontend dependencies
     - name: Install frontend dependencies
       working-directory: ./angular-frontend
       run: npm install
 
+    # Build Angular frontend
     - name: Build Angular frontend
       working-directory: ./angular-frontend
-      run: npm run build -- --configuration production --output-path=dist
+      run: npm run build -- --configuration production
 
-    - name: Deploy to Azure Web App
+    # Copy Angular dist to backend
+    - name: Copy Angular build to backend
+      run: |
+        rm -rf ./node-backend/dist
+        mkdir -p ./node-backend/dist/angular-frontend
+        cp -r ./angular-frontend/dist/angular-frontend/* ./node-backend/dist/angular-frontend/
+
+    # Install backend dependencies
+    - name: Install backend dependencies
+      working-directory: ./node-backend
+      run: npm install
+
+    # Deploy backend (which includes Angular static files) to Azure App Service
+    - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: CelesContainerWebApp              # Replace with your App Service name
+        app-name: CelesContainerWebApp                # Your Azure App Service name
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ./angular-frontend/dist
+        package: ./node-backend
