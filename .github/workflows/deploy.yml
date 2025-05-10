@@ -3,7 +3,7 @@ name: Azure Full Stack App Deployment
 on:
   push:
     branches:
-      - main  # Trigger on push to main branch
+      - main
 
 jobs:
   build-and-deploy:
@@ -13,13 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Setup Node.js
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
 
-    # Install dependencies and build Angular frontend
     - name: Install frontend dependencies
       working-directory: ./angular-frontend
       run: npm install
@@ -28,23 +26,20 @@ jobs:
       working-directory: ./angular-frontend
       run: npm run build -- --configuration production
 
-    # Copy frontend dist to backend public folder
-    - name: Move frontend to backend
+    - name: Copy Angular build to backend public folder
       run: |
-        rm -rf ./node-backend/public
-        mkdir -p ./node-backend/public
-        cp -r ./angular-frontend/dist/angular-frontend/* ./node-backend/public/
+        rm -rf ./node-backend/dist
+        mkdir -p ./node-backend/dist/angular-frontend
+        cp -r ./angular-frontend/dist/angular-frontend/* ./node-backend/dist/angular-frontend/
 
-    # Install backend dependencies
     - name: Install backend dependencies
       working-directory: ./node-backend
       run: npm install
 
-    # Deploy to Azure App Service
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: CelesContainerWebApp           # Replace with your Azure App Service name
+        app-name: CelesContainerWebApp  # Replace with your Azure Web App name
         slot-name: Production
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ./node-backend
