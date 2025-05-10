@@ -5,27 +5,39 @@ services:
     image: mongo
     container_name: mongo
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo-data:/data/db
+    networks:
+      - app-network
 
   backend:
     build: ./node-backend
     container_name: node-backend
     ports:
-      - "5000:5000"
+      - '5000:5000'
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/crudapp
     depends_on:
       - mongo
-    environment:
-      - MONGO_URL=mongodb://mongo:27017/crud-db
+    restart: always
+    networks:
+      - app-network
 
   frontend:
     build: ./angular-frontend
     container_name: angular-frontend
     ports:
-      - "4200:80"
+      - '4200:4200'
     depends_on:
       - backend
+    restart: always
+    networks:
+      - app-network
 
 volumes:
   mongo-data:
+
+networks:
+  app-network:
+    driver: bridge

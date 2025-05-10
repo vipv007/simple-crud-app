@@ -1,11 +1,8 @@
-FROM node:18
-
+# frontend/Dockerfile
+FROM node:lts-alpine
 WORKDIR /app
+COPY package*.json ./
+RUN npm install -g @angular/cli && npm install
 COPY . .
-
-RUN npm install
-RUN npm run build --configuration=production
-RUN npm install -g http-server
-
-# Serve using http-server from dist folder
-CMD ["http-server", "dist/angular-frontend", "-p", "80"]
+EXPOSE 4200
+CMD ["ng", "serve", "--host", "0.0.0.0", "--port", "4200"]

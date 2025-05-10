@@ -1,15 +1,8 @@
-FROM node:18
-
+# backend/Dockerfile
+FROM node:lts-alpine
 WORKDIR /app
-COPY . .
-
+COPY package*.json ./
 RUN npm install
-RUN npm run build --configuration=production
-
-# Install Express again just to be safe
-RUN npm install express mongoose cors
-
-COPY server.js .
-
+COPY . .
 EXPOSE 5000
 CMD ["node", "server.js"]

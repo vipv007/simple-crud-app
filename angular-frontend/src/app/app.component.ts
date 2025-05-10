@@ -17,21 +17,17 @@ export class AppComponent {
     this.fetchUsers();
   }
 
-  addUser() {
-    this.http.post<any>(
-      'https://celescontainerwebapp-gbb0eccffyfkg4hc.westus3-01.azurewebsites.net/users',
-      { name: this.name }
-    ).subscribe(() => {
-      this.name = '';
-      this.fetchUsers();
+  fetchUsers() {
+    this.http.get<any[]>('http://localhost:5000/users').subscribe(data => {
+      this.users = data;
     });
   }
 
-  fetchUsers() {
-    this.http.get<any[]>(
-      'https://celescontainerwebapp-gbb0eccffyfkg4hc.westus3-01.azurewebsites.net/users'
-    ).subscribe(data => {
-      this.users = data;
+  addUser() {
+    if (!this.name.trim()) return;
+    this.http.post<any>('http://localhost:5000/users', { name: this.name }).subscribe(newUser => {
+      this.users.push(newUser);
+      this.name = '';
     });
   }
 }
