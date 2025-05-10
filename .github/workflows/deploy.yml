@@ -1,35 +1,77 @@
-name: Deploy Angular Frontend to Azure
+# .github/workflows/azure-deploy.yml
+
+name: Build and Deploy Full Stack App to Azure App Service
 
 on:
   push:
     branches:
-      - main
+      - main  # Or your primary deployment branch
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      ANGULAR_PROJECT_NAME: angular-frontend # The name of your Angular project (and its output folder in dist)
+      BACKEND_FOLDER: node-backend # The folder containing your server.js and backend package.json
+      # AZURE_WEBAPP_NAME: 'YourAzureWebAppName' # Set this via secrets or directly if preferred
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '18' # Or your preferred Node.js version
 
-    - name: Install dependencies
-      working-directory: ./angular-frontend
+    # Install dependencies for the Node.js backend
+    - name: Install Backend Dependencies
+      working-directory: ./${{ env.BACKEND_FOLDER }}
       run: npm install
 
-    - name: Build Angular app
-      working-directory: ./angular-frontend
+    # Install dependencies and build the Angular frontend
+    - name: Install Frontend Dependencies
+      working-directory: ./angular-frontend # Path to your Angular app
+      run: npm install
+
+    - name: Build Angular App
+      working-directory: ./angular-frontend # Path to your Angular app
+      # This command builds the Angular app. The output is typically in './angular-frontend/dist/YOUR_ANGULAR_APP_NAME/'
+      # Ensure your server.js expects the frontend files at 'dist/angular-frontend' relative to server.js
       run: npm run build -- --configuration production
 
+    # Prepare the package for deployment
+    # This step creates a 'deployment_package' directory that will be deployed to Azure.
+    # It includes the backend server, its dependencies (via package.json), and the built Angular app.
+    - name: Prepare Deployment Package
+      run: |
+        mkdir -p deployment_package/dist
+        
+        # Copy backend files
+        cp ./${{ env.BACKEND_FOLDER }}/server.js deployment_package/
+        cp ./${{ env.BACKEND_FOLDER }}/package.json deployment_package/
+        cp ./${{ env.BACKEND_FOLDER }}/package-lock.json deployment_package/
+        
+        # Copy web.config if it exists and you're targeting Windows App Service
+        if [ -f ./${{ env.BACKEND_FOLDER }}/web.config ]; then
+          cp ./${{ env.BACKEND_FOLDER }}/web.config deployment_package/
+        fi
+        
+        # Copy built Angular app to the location expected by server.js
+        # server.js expects it in 'dist/angular-frontend' relative to server.js itself.
+        cp -R ./angular-frontend/dist/${{ env.ANGULAR_PROJECT_NAME }} ./deployment_package/dist/angular-frontend
+
+    - name: List deployment package contents (for debugging)
+      run: ls -R deployment_package
+
+    # Deploy to Azure Web App
     - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v3
       with:
-        app-name: CelesContainerWebApp  # Replace this
-        slot-name: Production
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: ./angular-frontend/dist/angular-frontend
+        app-name: 'CelesContainerWebApp'   # IMPORTANT: Replace with your actual Azure Web App name
+        slot-name: 'Production'            # Or your specific deployment slot
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }} # Store your publish profile as a secret
+        package: ./deployment_package      # Deploy the prepared package
+                                           # Azure App Service (Node on Linux) will run 'npm install' and then 'npm start'
+                                           # from the package.json in 'deployment_package'.
+                                           # For Windows with iisnode, web.config in the package handles startup.
