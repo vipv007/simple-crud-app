@@ -15,7 +15,7 @@ ng build --configuration production
 # 2. Move the built Angular files to the backend directory
 cd ../backend
 mkdir -p dist
-cp -r ../frontend/dist/angular-frontend ./dist/
+cp -r ../frontend/dist/angular-frontend ./dist/ 
 
 # 3. Install dependencies for the Node.js backend
 npm install
