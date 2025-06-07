@@ -69,7 +69,7 @@ jobs:
       uses: azure/webapps-deploy@v3
       with:
         app-name: 'CelesContainerWebApp'   # IMPORTANT: Replace with your actual Azure Web App name
-        slot-name: 'Production'            # Or your specific deployment slot
+        slot-name: 'sample'            # Or your specific deployment slot
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }} # Store your publish profile as a secret
         package: ./deployment_package      # Deploy the prepared package
                                            # Azure App Service (Node on Linux) will run 'npm install' and then 'npm start'
