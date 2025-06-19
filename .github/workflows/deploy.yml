@@ -1,77 +1,70 @@
-# .github/workflows/azure-deploy.yml
-
 name: Build and Deploy Full Stack App to Azure App Service
 
 on:
   push:
     branches:
-      - main  # Or your primary deployment branch
+      - main  # Trigger on push to main branch
+
+env:
+  ANGULAR_PROJECT_NAME: angular-frontend       # Your Angular project name
+  BACKEND_FOLDER: node-backend                 # Your backend folder
+  DEPLOY_PACKAGE: deployment_package           # Final folder to deploy
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    env:
-      ANGULAR_PROJECT_NAME: angular-frontend # The name of your Angular project (and its output folder in dist)
-      BACKEND_FOLDER: node-backend # The folder containing your server.js and backend package.json
-      # AZURE_WEBAPP_NAME: 'YourAzureWebAppName' # Set this via secrets or directly if preferred
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Checkout the repo
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22' # Or your preferred Node.js version
+      # Set up Node.js (use LTS unless you need 22)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'  # Use 18 (LTS) unless your app requires 22
 
-    # Install dependencies for the Node.js backend
-    - name: Install Backend Dependencies
-      working-directory: ./${{ env.BACKEND_FOLDER }}
-      run: npm install
+      # Install backend dependencies
+      - name: Install Backend Dependencies
+        working-directory: ./${{ env.BACKEND_FOLDER }}
+        run: npm install
 
-    # Install dependencies and build the Angular frontend
-    - name: Install Frontend Dependencies
-      working-directory: ./angular-frontend # Path to your Angular app
-      run: npm install
+      # Install frontend dependencies
+      - name: Install Angular Dependencies
+        working-directory: ./${{ env.ANGULAR_PROJECT_NAME }}
+        run: npm install
 
-    - name: Build Angular App
-      working-directory: ./angular-frontend # Path to your Angular app
-      # This command builds the Angular app. The output is typically in './angular-frontend/dist/YOUR_ANGULAR_APP_NAME/'
-      # Ensure your server.js expects the frontend files at 'dist/angular-frontend' relative to server.js
-      run: npm run build -- --configuration production
+      # Build Angular frontend
+      - name: Build Angular App
+        working-directory: ./${{ env.ANGULAR_PROJECT_NAME }}
+        run: npm run build -- --configuration production
 
-    # Prepare the package for deployment
-    # This step creates a 'deployment_package' directory that will be deployed to Azure.
-    # It includes the backend server, its dependencies (via package.json), and the built Angular app.
-    - name: Prepare Deployment Package
-      run: |
-        mkdir -p deployment_package/dist
-        
-        # Copy backend files
-        cp ./${{ env.BACKEND_FOLDER }}/server.js deployment_package/
-        cp ./${{ env.BACKEND_FOLDER }}/package.json deployment_package/
-        cp ./${{ env.BACKEND_FOLDER }}/package-lock.json deployment_package/
-        
-        # Copy web.config if it exists and you're targeting Windows App Service
-        if [ -f ./${{ env.BACKEND_FOLDER }}/web.config ]; then
-          cp ./${{ env.BACKEND_FOLDER }}/web.config deployment_package/
-        fi
-        
-        # Copy built Angular app to the location expected by server.js
-        # server.js expects it in 'dist/angular-frontend' relative to server.js itself.
-        cp -R ./angular-frontend/dist/${{ env.ANGULAR_PROJECT_NAME }} ./deployment_package/dist/angular-frontend
+      # Prepare deployment package (combine frontend + backend)
+      - name: Prepare Deployment Package
+        run: |
+          mkdir -p ${{ env.DEPLOY_PACKAGE }}/dist/angular-frontend
 
-    - name: List deployment package contents (for debugging)
-      run: ls -R deployment_package
+          # Copy backend files
+          cp ./${{ env.BACKEND_FOLDER }}/server.js ${{ env.DEPLOY_PACKAGE }}/
+          cp ./${{ env.BACKEND_FOLDER }}/package*.json ${{ env.DEPLOY_PACKAGE }}/
 
-    # Deploy to Azure Web App
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: 'celweb'   # IMPORTANT: Replace with your actual Azure Web App name
-        slot-name: 'Production'            # Or your specific deployment slot
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }} # Store your publish profile as a secret
-        package: ./deployment_package      # Deploy the prepared package
-                                           # Azure App Service (Node on Linux) will run 'npm install' and then 'npm start'
-                                           # from the package.json in 'deployment_package'.
-                                           # For Windows with iisnode, web.config in the package handles startup.
+          # Copy optional web.config (if using Windows App Service)
+          if [ -f ./${{ env.BACKEND_FOLDER }}/web.config ]; then
+            cp ./${{ env.BACKEND_FOLDER }}/web.config ${{ env.DEPLOY_PACKAGE }}/
+          fi
+
+          # Copy built Angular app
+          cp -R ./${{ env.ANGULAR_PROJECT_NAME }}/dist/${{ env.ANGULAR_PROJECT_NAME }}/* ${{ env.DEPLOY_PACKAGE }}/dist/angular-frontend/
+
+      # Debug: list deployment contents
+      - name: Debug Deployment Folder
+        run: ls -R ${{ env.DEPLOY_PACKAGE }}
+
+      # Deploy to Azure App Service
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'celweb'  # ✅ REPLACE with your Azure App name
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ env.DEPLOY_PACKAGE }}
