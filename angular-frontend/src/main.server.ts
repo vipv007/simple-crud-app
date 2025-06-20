@@ -1,10 +1,17 @@
-import 'zone.js/node'; // Required for server-side rendering
-import { renderApplication } from '@angular/platform-server';
+import type { ApplicationRef } from '@angular/core';
 import { AppComponent } from './app/app.component';
-import { provideHttpClient } from '@angular/common/http';
+// import { provideHttpClient } from '@angular/common/http';
 
-export default () => {
+export default function (): Promise<ApplicationRef> {
   return renderApplication(AppComponent, {
     providers: [provideHttpClient()]
   });
-};
+}
+function renderApplication(AppComponent: any, arg1: { providers: any[]; }): Promise<ApplicationRef> {
+    throw new Error('Function not implemented.');
+}
+
+function provideHttpClient(): any {
+    throw new Error('Function not implemented.');
+}
+
