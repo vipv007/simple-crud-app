@@ -40,7 +40,7 @@ export class AppComponent {
 }
 
 
-  // fetchUsers() {
+  // fetchUsers() {boots
   //   this.http.get<any[]>('http://localhost:5000/users').subscribe(data => {
   //     this.users = data;
   //   });
