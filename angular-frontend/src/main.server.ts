@@ -1,7 +1,10 @@
-import { bootstrapApplication } from '@angular/platform-browser';
+import 'zone.js/node'; // Required for server-side rendering
+import { renderApplication } from '@angular/platform-server';
 import { AppComponent } from './app/app.component';
 import { provideHttpClient } from '@angular/common/http';
 
-bootstrapApplication(AppComponent, {
-  providers: [provideHttpClient()] // ✅ This is critical for SSR/static build
-}).catch(err => console.error(err));
+export default () => {
+  return renderApplication(AppComponent, {
+    providers: [provideHttpClient()]
+  });
+};
