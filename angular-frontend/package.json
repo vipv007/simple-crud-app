@@ -7,7 +7,12 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:angular-frontend": "node dist/angular-frontend/server/server.mjs"
+    "serve:ssr:angular-frontend": "node dist/angular-frontend/server/server.mjs",
+
+  "build:ssr": "ng build && ng run angular-frontend:server",
+  "serve:ssr": "node dist/angular-frontend/server/main.js"
+
+
   },
   "private": true,
   "dependencies": {
