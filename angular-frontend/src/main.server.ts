@@ -1,6 +1,5 @@
 import type { ApplicationRef } from '@angular/core';
 import { AppComponent } from './app/app.component';
-// import { provideHttpClient } from '@angular/common/http';
 
 export default function (): Promise<ApplicationRef> {
   return renderApplication(AppComponent, {
