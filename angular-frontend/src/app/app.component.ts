@@ -18,16 +18,31 @@ export class AppComponent {
   }
 
   fetchUsers() {
-    this.http.get<any[]>('http://localhost:5000/users').subscribe(data => {
-      this.users = data;
-    });
-  }
+  this.http.get<any[]>('/users').subscribe(data => {
+    this.users = data;
+  });
+}
 
-  addUser() {
-    if (!this.name.trim()) return;
-    this.http.post<any>('http://localhost:5000/users', { name: this.name }).subscribe(newUser => {
-      this.users.push(newUser);
-      this.name = '';
-    });
-  }
+addUser() {
+  if (!this.name.trim()) return;
+  this.http.post<any>('/users', { name: this.name }).subscribe(newUser => {
+    this.users.push(newUser);
+    this.name = '';
+  });
+}
+
+
+  // fetchUsers() {
+  //   this.http.get<any[]>('http://localhost:5000/users').subscribe(data => {
+  //     this.users = data;
+  //   });
+  // }
+
+  // addUser() {
+  //   if (!this.name.trim()) return;
+  //   this.http.post<any>('http://localhost:5000/users', { name: this.name }).subscribe(newUser => {
+  //     this.users.push(newUser);
+  //     this.name = '';
+  //   });
+  // }
 }
