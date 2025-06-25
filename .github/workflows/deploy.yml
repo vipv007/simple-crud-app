@@ -1,4 +1,4 @@
-name: Deploy to Azure App Service celweb
+name: Deploy to Azure App Service celweb (slot: celweb-new)
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
       - name: ⬇️ Checkout source code
         uses: actions/checkout@v3
 
-      - name: 🧰 Set up Node.js
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
@@ -28,7 +28,7 @@ jobs:
         run: |
           npm install
 
-      - name: 📦 Prepare deployment folder
+      - name: 📦 Prepare deployment package
         run: |
           mkdir deploy
           cp -r node-backend/* deploy/
@@ -39,10 +39,10 @@ jobs:
           cd deploy
           zip -r ../deploy.zip .
 
-      - name: 🚀 Deploy to Azure App Service
+      - name: 🚀 Deploy to Azure App Service Slot
         uses: azure/webapps-deploy@v2
         with:
           app-name: celweb
+          slot-name: celweb-new
           package: deploy.zip
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
- 
+          publish-profile: ${{ secrets.AZURE_WEBAPP_SLOT_PROFILE }}
