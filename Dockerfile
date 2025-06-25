@@ -1,15 +1,29 @@
-# Stage 1: Build
+# Stage 1: Build Angular app
 FROM node:18 AS builder
+
 WORKDIR /app
-COPY . .
+
+COPY package*.json ./
 RUN npm install
-RUN npm run build
 
-# Stage 2: Serve
-FROM node:18-alpine
+COPY . .
+RUN npm run build --prod
+
+# Stage 2: Serve using pm2 in Azure
+FROM node:18-slim
+
+# Install pm2 globally
 RUN npm install -g pm2
-WORKDIR /home/site/wwwroot
-COPY --from=builder /app/dist/your-app-name/ .
 
-EXPOSE 3000
-CMD ["sh", "-c", "pm2 serve /home/site/wwwroot $PORT --spa --no-daemon"]
+# Azure expects content to be in /home/site/wwwroot
+WORKDIR /home/site/wwwroot
+
+# Copy built Angular app from builder stage
+COPY --from=builder /app/dist/<your-angular-app-folder> .
+
+# Default port is injected by Azure via the PORT env var
+ENV PM2_SERVE_PATH=/home/site/wwwroot
+ENV PM2_SERVE_PORT=$PORT
+
+# Start PM2 to serve Angular SPA
+CMD ["sh", "-c", "pm2 serve $PM2_SERVE_PATH $PM2_SERVE_PORT --spa --no-daemon"]
