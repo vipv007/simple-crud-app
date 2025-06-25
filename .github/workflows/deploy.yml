@@ -9,41 +9,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: ⬇️ Checkout source code
         uses: actions/checkout@v3
 
-      # Setup Node.js for frontend + backend
-      - name: Setup Node.js
+      - name: 🧰 Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install frontend dependencies and build Angular
+      - name: 🛠️ Install frontend dependencies & build Angular
         working-directory: ./angular-frontend
         run: |
           npm install
           npm run build --prod
 
-      - name: Install backend dependencies
+      - name: 🛠️ Install backend dependencies
         working-directory: ./node-backend
         run: |
           npm install
 
-      - name: Prepare deployment package
+      - name: 📦 Prepare deployment folder
         run: |
           mkdir deploy
           cp -r node-backend/* deploy/
           cp -r angular-frontend/dist/angular-frontend deploy/public
 
-      - name: Zip deployment folder
+      - name: 🗜️ Zip deployment folder
         run: |
           cd deploy
           zip -r ../deploy.zip .
 
-      - name: Deploy to Azure App Service
+      - name: 🚀 Deploy to Azure App Service
         uses: azure/webapps-deploy@v2
         with:
           app-name: celweb
           package: deploy.zip
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
- 
