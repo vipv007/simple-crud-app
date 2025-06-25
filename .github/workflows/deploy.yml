@@ -2,7 +2,7 @@ name: Deploy to Azure App Service celweb (slot: celweb-new)
 
 on:
   push:
-    branches: [main]
+    branches: main
 
 jobs:
   build-and-deploy:
@@ -43,6 +43,6 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: celweb
-          slot-name: celweb-new
+          slot-name: new
           package: deploy.zip
           publish-profile: ${{ secrets.AZURE_WEBAPP_SLOT_PROFILE }}
