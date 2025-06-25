@@ -1,4 +1,4 @@
-name: Deploy to Azure App Service celweb (slot: celweb-new)
+name: Deploy to Azure App Service celweb-new slot
 
 on:
   push:
@@ -10,40 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⬇️ Checkout source code
+      - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: 🧰 Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: 🛠️ Install frontend dependencies & build Angular
+      - name: Install frontend dependencies and build Angular
         working-directory: ./angular-frontend
         run: |
           npm install
           npm run build --prod
 
-      - name: 🛠️ Install backend dependencies
+      - name: Install backend dependencies
         working-directory: ./node-backend
         run: |
           npm install
 
-      - name: 📦 Prepare deployment package
+      - name: Prepare deployment package
         run: |
           mkdir deploy
           cp -r node-backend/* deploy/
           cp -r angular-frontend/dist/angular-frontend deploy/public
 
-      - name: 🗜️ Zip deployment folder
+      - name: Zip deployment folder
         run: |
           cd deploy
           zip -r ../deploy.zip .
 
-      - name: 🚀 Deploy to Azure App Service Slot
+      - name: Deploy to Azure App Service Slot
         uses: azure/webapps-deploy@v2
         with:
           app-name: celweb
-          slot-name: new
+          slot-name: celweb-new
           package: deploy.zip
           publish-profile: ${{ secrets.AZURE_WEBAPP_SLOT_PROFILE }}
