@@ -1,71 +1,48 @@
-name: Build and Deploy Full Stack App to Azure App Service
+name: Deploy to Azure App Service celweb
 
 on:
   push:
-    branches:
-      - main  # Trigger on push to main branch
-
-env:
-  ANGULAR_PROJECT_NAME: angular-frontend       # Your Angular project name
-  BACKEND_FOLDER: node-backend                 # Your backend folder
-  DEPLOY_PACKAGE: deployment_package           # Final folder to deploy
+    branches: [main]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repo
-      - name: Checkout source code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      # Set up Node.js (use LTS unless you need 22)
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      # Setup Node.js for frontend + backend
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'  # Use 18 (LTS) unless your app requires 22
+          node-version: '18'
 
-      # Install backend dependencies
-      - name: Install Backend Dependencies
-        working-directory: ./${{ env.BACKEND_FOLDER }}
-        run: npm install
-
-      # Install frontend dependencies
-      - name: Install Angular Dependencies
-        working-directory: ./${{ env.ANGULAR_PROJECT_NAME }}
-        run: npm install
-
-      # Build Angular frontend
-      - name: Build Angular App
-        working-directory: ./${{ env.ANGULAR_PROJECT_NAME }}
-        run: npm run build -- --configuration production
-
-      # Prepare deployment package (combine frontend + backend)
-      - name: Prepare Deployment Package
+      - name: Install frontend dependencies and build Angular
+        working-directory: ./angular-frontend
         run: |
-          mkdir -p ${{ env.DEPLOY_PACKAGE }}/dist/angular-frontend
+          npm install
+          npm run build --prod
 
-          # Copy backend files
-          cp ./${{ env.BACKEND_FOLDER }}/server.js ${{ env.DEPLOY_PACKAGE }}/
-          cp ./${{ env.BACKEND_FOLDER }}/package*.json ${{ env.DEPLOY_PACKAGE }}/
+      - name: Install backend dependencies
+        working-directory: ./node-backend
+        run: |
+          npm install
 
-          # Copy optional web.config (if using Windows App Service)
-          if [ -f ./${{ env.BACKEND_FOLDER }}/web.config ]; then
-            cp ./${{ env.BACKEND_FOLDER }}/web.config ${{ env.DEPLOY_PACKAGE }}/
-          fi
+      - name: Prepare deployment package
+        run: |
+          mkdir deploy
+          cp -r node-backend/* deploy/
+          cp -r angular-frontend/dist/angular-frontend deploy/public
 
-          # Copy built Angular app
-          cp -R ./${{ env.ANGULAR_PROJECT_NAME }}/dist/${{ env.ANGULAR_PROJECT_NAME }}/* ${{ env.DEPLOY_PACKAGE }}/dist/angular-frontend/
+      - name: Zip deployment folder
+        run: |
+          cd deploy
+          zip -r ../deploy.zip .
 
-      # Debug: list deployment contents
-      - name: Debug Deployment Folder
-        run: ls -R ${{ env.DEPLOY_PACKAGE }}
-
-      # Deploy to Azure App Service
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
         with:
-          app-name: 'celweb'  # ✅ REPLACE with your Azure App name
-          slot-name: 'production'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.DEPLOY_PACKAGE }}
+          app-name: celweb
+          package: deploy.zip
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
